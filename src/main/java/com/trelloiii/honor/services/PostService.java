@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.transaction.Transactional;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -34,7 +35,9 @@ public class PostService {
         this.uploadService = uploadService;
         this.commentsRepository = commentsRepository;
     }
-
+    public Post getLastByType(String type){
+        return postRepository.getDistinctFirstByType(PostType.valueOf(type));
+    }
     public List<Post> findAllPosts() {
         return postRepository.findAll();
     }
@@ -183,7 +186,7 @@ public class PostService {
     public void deleteComments(Long id){
         commentsRepository.deleteById(id);
     }
-    private Comments findCommentById(Long id){
+    public Comments findCommentById(Long id){
         return commentsRepository.findById(id).orElseThrow(()->
             new EntityNotFoundException(String.format("Entity comments with id = %d not found",id))
         );
