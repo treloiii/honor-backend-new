@@ -1,8 +1,10 @@
 package com.trelloiii.honor.controllers;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import com.trelloiii.honor.model.GalleryAlbum;
 import com.trelloiii.honor.model.GalleryImage;
 import com.trelloiii.honor.services.GalleryAlbumService;
+import com.trelloiii.honor.view.Views;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,10 +23,12 @@ public class GalleryController {
     }
 
     @GetMapping
+    @JsonView(Views.ImportantView.class)
     public List<GalleryAlbum> getAllAlbums(){
         return galleryAlbumService.getAllAlbums();
     }
     @GetMapping("/{id}")
+    @JsonView(Views.FullView.class)
     public GalleryAlbum getAlbumById(@PathVariable Long id){
         return galleryAlbumService.findById(id);
     }
