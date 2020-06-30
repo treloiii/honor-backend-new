@@ -56,23 +56,32 @@ public class PostService {
         Optional.ofNullable(title).ifPresent(post::setTitle);
         Optional.ofNullable(shortDescription).ifPresent(post::setShortDescription);
         Optional.ofNullable(type).ifPresent(t -> post.setType(PostType.valueOf(t)));
+
+
+
         Optional.ofNullable(titleImage).ifPresent(image -> {
             try {
-                uploadService.uploadImage(image, helper.getPathToUpload(), helper.getURL());
+                String path=helper.getPathToUpload()+"/title";
+                uploadService.removeOld(path);
+                uploadService.uploadImage(image, path, helper.getURL());
             } catch (IOException e) {
                 e.printStackTrace();
             }
         });
         Optional.ofNullable(titleImageMini).ifPresent(image -> {
             try {
-                uploadService.uploadImage(image, helper.getPathToUpload(), helper.getURL());
+                String path=helper.getPathToUpload()+"/title_short";
+                uploadService.removeOld(path);
+                uploadService.uploadImage(image, path, helper.getURL());
             } catch (IOException e) {
                 e.printStackTrace();
             }
         });
         Optional.ofNullable(description).ifPresent(d -> {
+            String path=helper.getPathToUpload()+"/description";
             try {
-                post.setDescription(processDescription(d, postImages, helper.getPathToUpload(), helper.getURL()));
+                uploadService.removeOld(path);
+                post.setDescription(processDescription(d, postImages, path, helper.getURL()));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -104,10 +113,10 @@ public class PostService {
         String pathToUpload = helper.getPathToUpload();
         String URL = helper.getURL();
 
-        post.setTitleImage(uploadService.uploadImage(titleImage, pathToUpload, URL));
-        post.setTitleImageMini(uploadService.uploadImage(titleImageMini, pathToUpload, URL));
+        post.setTitleImage(uploadService.uploadImage(titleImage, pathToUpload+"/title", URL));
+        post.setTitleImageMini(uploadService.uploadImage(titleImageMini, pathToUpload+"/title_short", URL));
 
-        post.setDescription(processDescription(description, postImages, pathToUpload, URL));
+        post.setDescription(processDescription(description, postImages, pathToUpload+"/description", URL));
         return postRepository.save(post);
     }
 
@@ -121,7 +130,8 @@ public class PostService {
             int i = 0;
             for (String s : buf) {
                 if (i < postImages.length) {
-                    String imagePath = uploadService.uploadImage(postImages[i], pathToUpload, URL);
+                    String upload=pathToUpload;
+                    String imagePath = uploadService.uploadImage(postImages[i], upload, URL);
                     textBuilder
                             .append(s)
                             .append("<img src=\"")

@@ -1,5 +1,6 @@
 package com.trelloiii.honor.services;
 
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,7 +16,10 @@ public class UploadService {
     private String hostname;
 
     public void createFolders(String uploadPath, Long id) {
-        new File(uploadPath+"/"+"posts"+"/"+id).mkdirs();
+        String[] folders={"description","title","title_short"};
+        for (String folder : folders) {
+            new File(String.join("/",uploadPath,"posts",String.valueOf(id),folder)).mkdirs();
+        }
     }
 
     /**
@@ -33,5 +37,8 @@ public class UploadService {
         String uploadImageName = pathToUpload + "/" + fileUUID + "_" + imageName;
         image.transferTo(new File(uploadImageName));
         return String.join("/",hostname,"img",resultImageName);
+    }
+    public void removeOld(String path) throws IOException {
+        FileUtils.cleanDirectory(new File(path));
     }
 }
