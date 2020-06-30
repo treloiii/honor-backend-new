@@ -1,7 +1,9 @@
 package com.trelloiii.honor.controllers;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import com.trelloiii.honor.model.Post;
 import com.trelloiii.honor.services.PostService;
+import com.trelloiii.honor.view.Views;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -28,10 +30,12 @@ public class PublicController {
     }
 
     @GetMapping("/post")
+    @JsonView(Views.ImportantView.class)
     public List<Post> getPosts(){
         return postService.findAllPosts();
     }
     @GetMapping("/post/{id}")
+    @JsonView(Views.FullView.class)
     public Post getPostById(@PathVariable Long id){
         return postService.findById(id);
     }
