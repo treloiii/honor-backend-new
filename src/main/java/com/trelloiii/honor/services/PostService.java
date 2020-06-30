@@ -1,8 +1,10 @@
 package com.trelloiii.honor.services;
 
 import com.trelloiii.honor.exceptions.EntityNotFoundException;
+import com.trelloiii.honor.model.Comments;
 import com.trelloiii.honor.model.Post;
 import com.trelloiii.honor.model.PostType;
+import com.trelloiii.honor.repository.CommentsRepository;
 import com.trelloiii.honor.repository.PostRepository;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -16,6 +18,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class PostService {
@@ -24,10 +27,11 @@ public class PostService {
     private String uploadPath;
     private final PostRepository postRepository;
     private final UploadService uploadService;
-
-    public PostService(PostRepository postRepository, UploadService uploadService) {
+    private final CommentsRepository commentsRepository;
+    public PostService(PostRepository postRepository, UploadService uploadService, CommentsRepository commentsRepository) {
         this.postRepository = postRepository;
         this.uploadService = uploadService;
+        this.commentsRepository = commentsRepository;
     }
 
     public List<Post> findAllPosts() {
@@ -35,16 +39,22 @@ public class PostService {
     }
 
     public Post findById(Long id) {
-        return postRepository.findById(id).orElseThrow(() ->
+        Post post= postRepository.findById(id).orElseThrow(() ->
                 new EntityNotFoundException(String.format("Post with id = %d not found", id))
         );
+        post.setComments(
+                post.getComments()
+                        .stream()
+                        .filter(Comments::isActive)
+                        .collect(Collectors.toList())
+        );
+        return post;
     }
 
     public void deletePost(Long id){
-        Post post = findById(id);
         UrlHelper helper=getPaths(id);
         uploadService.removeAll(helper.getPathToUpload());
-        postRepository.delete(post);
+        postRepository.deleteById(id);
     }
 
     public Post updatePost(String title,
@@ -70,7 +80,7 @@ public class PostService {
             try {
                 String path=helper.getPathToUpload()+"/title";
                 uploadService.removeOld(path);
-                uploadService.uploadImage(image, path, helper.getURL());
+                uploadService.uploadImage(image, path, helper.getURL()+"/title");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -79,7 +89,7 @@ public class PostService {
             try {
                 String path=helper.getPathToUpload()+"/title_short";
                 uploadService.removeOld(path);
-                uploadService.uploadImage(image, path, helper.getURL());
+                uploadService.uploadImage(image, path, helper.getURL()+"/title_short");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -88,7 +98,7 @@ public class PostService {
             String path=helper.getPathToUpload()+"/description";
             try {
                 uploadService.removeOld(path);
-                post.setDescription(processDescription(d, postImages, path, helper.getURL()));
+                post.setDescription(processDescription(d, postImages, path, helper.getURL()+"/description"));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -114,16 +124,16 @@ public class PostService {
         post.setType(postType);
         post = postRepository.save(post);
 
-        uploadService.createFolders(uploadPath, post.getId());
+        uploadService.createPostFolders(uploadPath, post.getId());
 
         UrlHelper helper = getPaths(post.getId());
         String pathToUpload = helper.getPathToUpload();
         String URL = helper.getURL();
 
-        post.setTitleImage(uploadService.uploadImage(titleImage, pathToUpload+"/title", URL));
-        post.setTitleImageMini(uploadService.uploadImage(titleImageMini, pathToUpload+"/title_short", URL));
+        post.setTitleImage(uploadService.uploadImage(titleImage, pathToUpload+"/title", URL+"/title"));
+        post.setTitleImageMini(uploadService.uploadImage(titleImageMini, pathToUpload+"/title_short", URL+"/title_short"));
 
-        post.setDescription(processDescription(description, postImages, pathToUpload+"/description", URL));
+        post.setDescription(processDescription(description, postImages, pathToUpload+"/description", URL+"/description"));
         return postRepository.save(post);
     }
 
@@ -137,8 +147,7 @@ public class PostService {
             int i = 0;
             for (String s : buf) {
                 if (i < postImages.length) {
-                    String upload=pathToUpload;
-                    String imagePath = uploadService.uploadImage(postImages[i], upload, URL);
+                    String imagePath = uploadService.uploadImage(postImages[i], pathToUpload, URL);
                     textBuilder
                             .append(s)
                             .append("<img src=\"")
@@ -158,6 +167,28 @@ public class PostService {
         String URL = String.join("/", "posts", String.valueOf(id)); // as example posts/12
         String pathToUpload = String.join("/", uploadPath, URL); // as example /home/uploads/posts/12
         return new UrlHelper(URL, pathToUpload);
+    }
+
+    public Comments addComment(Long id, String nickname, String text) {
+        Comments comments=new Comments();
+        comments.setActive(false);
+        comments.setNickname(nickname);
+        comments.setText(text);
+        comments.setTime(LocalDateTime.now());
+        comments.setPost(findById(id));
+        return commentsRepository.save(comments);
+    }
+
+    public void setActiveComments(boolean active,Long id){
+        commentsRepository.setActive(active,id);
+    }
+    public void deleteComments(Long id){
+        commentsRepository.deleteById(id);
+    }
+    private Comments findCommentById(Long id){
+        return commentsRepository.findById(id).orElseThrow(()->
+            new EntityNotFoundException(String.format("Entity comments with id = %d not found",id))
+        );
     }
 
     @Data

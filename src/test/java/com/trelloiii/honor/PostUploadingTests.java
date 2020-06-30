@@ -42,9 +42,12 @@ class PostUploadingTests {
         );
         Post post=postService.uploadPost(title,description,shortDescription,titleImage,titleImage,new MultipartFile[]{titleImage},type.toString());
         Assert.assertNotNull(post.getTitleImage());
+        Assert.assertTrue(post.getTitleImage().contains("title"));
         Assert.assertNotNull(post.getTitleImageMini());
+        Assert.assertTrue(post.getTitleImageMini().contains("title_short"));
         Assert.assertTrue(post.getDescription().contains("http://localhost:8080"));
         Assert.assertTrue(post.getDescription().contains("mock.png"));
+        Assert.assertTrue(post.getDescription().contains("description"));
         Assert.assertEquals(title,post.getTitle());
         Assert.assertEquals(shortDescription,post.getShortDescription());
 

@@ -1,6 +1,7 @@
 package com.trelloiii.honor.controllers;
 
 import com.fasterxml.jackson.annotation.JsonView;
+import com.trelloiii.honor.model.Comments;
 import com.trelloiii.honor.model.Post;
 import com.trelloiii.honor.services.PostService;
 import com.trelloiii.honor.view.Views;
@@ -16,11 +17,11 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/public")
-public class PublicController {
+@RequestMapping("/post")
+public class PostController {
     private final PostService postService;
 
-    public PublicController(PostService postService) {
+    public PostController(PostService postService) {
         this.postService = postService;
     }
 
@@ -29,17 +30,16 @@ public class PublicController {
         return "Hello world";
     }
 
-    @GetMapping("/post")
     @JsonView(Views.ImportantView.class)
     public List<Post> getPosts(){
         return postService.findAllPosts();
     }
-    @GetMapping("/post/{id}")
+    @GetMapping("/{id}")
     @JsonView(Views.FullView.class)
     public Post getPostById(@PathVariable Long id){
         return postService.findById(id);
     }
-    @PostMapping("/post")
+    @PostMapping
     public ResponseEntity<?> uploadPost(
             @RequestParam String title,
             @RequestParam String description,
@@ -57,7 +57,7 @@ public class PublicController {
             return ResponseEntity.of(Optional.empty());
         }
     }
-    @PutMapping("/post/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<?> updatePost(
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String description,
@@ -77,9 +77,25 @@ public class PublicController {
             return ResponseEntity.of(Optional.empty());
         }
     }
-    @DeleteMapping("/post/{id}")
+    @DeleteMapping("/{id}")
     public void deletePost(@PathVariable Long id){
         postService.deletePost(id);
+    }
+
+    @PostMapping("/comments")
+    public Comments addCommentToPost(@RequestParam Long id,
+                                     @RequestParam String nickname,
+                                     @RequestParam String text){
+        return postService.addComment(id,nickname,text);
+    }
+    @PutMapping("/comments")
+    public void changeActive(@RequestParam Boolean active,
+                                 @RequestParam Long id){
+        postService.setActiveComments(active,id);
+    }
+    @DeleteMapping("/comments/{id}")
+    public void deleteComment(@PathVariable Long id){
+        postService.deleteComments(id);
     }
 
 }

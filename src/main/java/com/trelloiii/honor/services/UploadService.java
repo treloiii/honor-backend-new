@@ -15,7 +15,7 @@ public class UploadService {
     @Value("${hostname}")
     private String hostname;
 
-    public void createFolders(String uploadPath, Long id) {
+    public void createPostFolders(String uploadPath, Long id) {
         String[] folders={"description","title","title_short"};
         for (String folder : folders) {
             new File(String.join("/",uploadPath,"posts",String.valueOf(id),folder)).mkdirs();
