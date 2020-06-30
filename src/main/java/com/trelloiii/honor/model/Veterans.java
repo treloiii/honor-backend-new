@@ -1,14 +1,18 @@
 package com.trelloiii.honor.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonView;
+import com.trelloiii.honor.view.Views;
 import lombok.Data;
 
 import javax.persistence.*;
+import javax.swing.text.View;
 import java.util.List;
 
 @Data
 @Entity
 @Table(name="honor_veterans")
+@JsonView(Views.FullView.class)
 public class Veterans {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -17,14 +21,8 @@ public class Veterans {
     private String post;
     @Column(name = "rankk")
     private String rank;
-    @ManyToMany(
-       cascade = {CascadeType.ALL}
-    )
-    @JoinTable(
-            name="ordens_to_people",
-            joinColumns = {@JoinColumn(name="veteran_id")},
-            inverseJoinColumns = {@JoinColumn(name = "orden_id")}
-    )
+    @ManyToOne
+    @JoinColumn(name = "orden_id")
     @JsonIgnore
-    private List<Ordens> ordens;
+    private Ordens ordens;
 }

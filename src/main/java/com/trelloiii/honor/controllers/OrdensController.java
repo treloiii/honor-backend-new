@@ -1,7 +1,10 @@
 package com.trelloiii.honor.controllers;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import com.trelloiii.honor.model.Ordens;
+import com.trelloiii.honor.model.Veterans;
 import com.trelloiii.honor.services.OrdenService;
+import com.trelloiii.honor.view.Views;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,13 +22,17 @@ public class OrdensController {
     }
 
     @GetMapping
-    public List<Ordens> getAllOrdens(){
+    @JsonView(Views.ImportantView.class)
+    public List<Ordens> getAllOrdens() {
         return ordenService.getAllOrdens();
     }
+
     @GetMapping("/{id}")
-    public Ordens getOrden(@PathVariable Long id){
+    @JsonView(Views.FullView.class)
+    public Ordens getOrden(@PathVariable Long id) {
         return ordenService.findById(id);
     }
+
     @PostMapping
     public ResponseEntity<?> addOrden(
             @RequestParam String name,
@@ -35,12 +42,12 @@ public class OrdensController {
     ) {
         try {
             return ResponseEntity.ok(ordenService.addOrden(name, description, shortDescription, titleImage));
-        }
-        catch (IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
             return ResponseEntity.badRequest().build();
         }
     }
+
     @PutMapping("{id}")
     public Ordens updateOrden(
             @RequestParam(required = false) String name,
@@ -48,12 +55,20 @@ public class OrdensController {
             @RequestParam(required = false) String shortDescription,
             @RequestParam(required = false) MultipartFile titleImage,
             @PathVariable Long id
-    )
-    {
-        return ordenService.updateOrden(name,description,shortDescription,titleImage,id);
+    ) {
+        return ordenService.updateOrden(name, description, shortDescription, titleImage, id);
     }
+
     @DeleteMapping("{id}")
-    public void deleteOrden(@PathVariable Long id){
+    public void deleteOrden(@PathVariable Long id) {
         ordenService.deleteOrden(id);
+    }
+
+    @PostMapping("/veterans")
+    public Veterans addVeteran(@RequestParam Long id,
+                               @RequestParam String fio,
+                               @RequestParam String post,
+                               @RequestParam String rank) {
+        return ordenService.addVeteran(id,fio,post,rank);
     }
 }

@@ -3,8 +3,9 @@ package com.trelloiii.honor.services;
 import com.trelloiii.honor.dto.UrlHelper;
 import com.trelloiii.honor.exceptions.EntityNotFoundException;
 import com.trelloiii.honor.model.Ordens;
+import com.trelloiii.honor.model.Veterans;
 import com.trelloiii.honor.repository.OrdenRepository;
-import jdk.nashorn.internal.runtime.regexp.joni.constants.OPCode;
+import com.trelloiii.honor.repository.VeteransRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,11 +21,13 @@ import java.util.Optional;
 public class OrdenService {
     private final Logger logger = LoggerFactory.getLogger(PostService.class);
     private final OrdenRepository ordenRepository;
+    private final VeteransRepository veteransRepository;
     private final UploadService uploadService;
     @Value("${upload.path}")
     private String uploadPath;
-    public OrdenService(OrdenRepository ordenRepository, UploadService uploadService) {
+    public OrdenService(OrdenRepository ordenRepository, VeteransRepository veteransRepository, UploadService uploadService) {
         this.ordenRepository = ordenRepository;
+        this.veteransRepository = veteransRepository;
         this.uploadService = uploadService;
     }
 
@@ -78,5 +82,14 @@ public class OrdenService {
         UrlHelper helper=UrlHelper.getPaths(id,uploadPath,"ordens");
         uploadService.removeAll(helper.getPathToUpload());
         ordenRepository.deleteById(id);
+    }
+
+    public Veterans addVeteran(Long id, String fio, String post, String rank) {
+        Veterans veteran =new Veterans();
+        veteran.setFio(fio);
+        veteran.setPost(post);
+        veteran.setRank(rank);
+        veteran.setOrdens(findById(id));
+        return veteransRepository.save(veteran);
     }
 }
