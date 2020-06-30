@@ -1,5 +1,6 @@
 package com.trelloiii.honor.services;
 
+import com.trelloiii.honor.dto.UrlHelper;
 import com.trelloiii.honor.exceptions.EntityNotFoundException;
 import com.trelloiii.honor.model.Comments;
 import com.trelloiii.honor.model.Post;
@@ -52,7 +53,8 @@ public class PostService {
     }
 
     public void deletePost(Long id){
-        UrlHelper helper=getPaths(id);
+        logger.info("Delete post with id {}",id);
+        UrlHelper helper = UrlHelper.getPaths(id,uploadPath,"posts");
         uploadService.removeAll(helper.getPathToUpload());
         postRepository.deleteById(id);
     }
@@ -68,7 +70,7 @@ public class PostService {
         logger.info("Update post with id={}, description={}, shortDescription={}, type={}, images count={}",id,description,shortDescription,type,postImages.length);
         Post post = findById(id);
 
-        UrlHelper helper = getPaths(post.getId());
+        UrlHelper helper = UrlHelper.getPaths(post.getId(),uploadPath,"posts");
 
         Optional.ofNullable(title).ifPresent(post::setTitle);
         Optional.ofNullable(shortDescription).ifPresent(post::setShortDescription);
@@ -126,7 +128,7 @@ public class PostService {
 
         uploadService.createPostFolders(uploadPath, post.getId());
 
-        UrlHelper helper = getPaths(post.getId());
+        UrlHelper helper = UrlHelper.getPaths(post.getId(),uploadPath,"posts");
         String pathToUpload = helper.getPathToUpload();
         String URL = helper.getURL();
 
@@ -163,11 +165,7 @@ public class PostService {
         return description;
     }
 
-    private UrlHelper getPaths(Long id) {
-        String URL = String.join("/", "posts", String.valueOf(id)); // as example posts/12
-        String pathToUpload = String.join("/", uploadPath, URL); // as example /home/uploads/posts/12
-        return new UrlHelper(URL, pathToUpload);
-    }
+
 
     public Comments addComment(Long id, String nickname, String text) {
         Comments comments=new Comments();
@@ -190,12 +188,4 @@ public class PostService {
             new EntityNotFoundException(String.format("Entity comments with id = %d not found",id))
         );
     }
-
-    @Data
-    @AllArgsConstructor
-    static class UrlHelper {
-        private String URL;
-        private String pathToUpload;
-    }
-
 }

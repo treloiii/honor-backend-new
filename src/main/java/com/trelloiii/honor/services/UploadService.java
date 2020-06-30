@@ -22,6 +22,10 @@ public class UploadService {
         }
     }
 
+    public void createOrdensFolders(String uploadPath, Long id){
+        new File(String.join("/",uploadPath,"ordens",String.valueOf(id))).mkdirs();
+    }
+
     /**
      *
      * @param image downloaded image
