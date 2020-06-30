@@ -25,6 +25,9 @@ public class UploadService {
     public void createOrdensFolders(String uploadPath, Long id){
         new File(String.join("/",uploadPath,"ordens",String.valueOf(id))).mkdirs();
     }
+    public void createGalleryFolders(String uploadPath,Long id){
+        new File(String.join("/",uploadPath,"gallery",String.valueOf(id))).mkdirs();
+    }
 
     /**
      *
@@ -51,5 +54,8 @@ public class UploadService {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    public void removeFile(String path) throws IOException {
+        FileUtils.forceDelete(new File(path));
     }
 }
