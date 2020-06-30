@@ -1,10 +1,12 @@
 package com.trelloiii.honor;
 
+import com.trelloiii.honor.exceptions.EntityNotFoundException;
 import com.trelloiii.honor.model.Post;
 import com.trelloiii.honor.model.PostType;
 import com.trelloiii.honor.services.PostService;
 import lombok.SneakyThrows;
 import org.junit.Assert;
+import org.junit.function.ThrowingRunnable;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +49,7 @@ class PostUploadingTests {
         Assert.assertEquals(shortDescription,post.getShortDescription());
 
         updatingPostTest(post.getId());
+        deletePostTest(post.getId());
     }
 
 
@@ -72,5 +75,11 @@ class PostUploadingTests {
         Assert.assertEquals(type,post.getType().toString());
         Assert.assertNotNull(post.getTitleImageMini());
         Assert.assertNotNull(post.getTitleImage());
+    }
+
+    public void deletePostTest(Long id){
+        postService.deletePost(id);
+        Assert.assertThrows(EntityNotFoundException.class,()-> postService.findById(id));
+        Assert.assertFalse(new File(String.format("./data/posts/%d",id)).exists());
     }
 }

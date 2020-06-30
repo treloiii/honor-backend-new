@@ -40,6 +40,13 @@ public class PostService {
         );
     }
 
+    public void deletePost(Long id){
+        Post post = findById(id);
+        UrlHelper helper=getPaths(id);
+        uploadService.removeAll(helper.getPathToUpload());
+        postRepository.delete(post);
+    }
+
     public Post updatePost(String title,
                            String description,
                            String shortDescription,

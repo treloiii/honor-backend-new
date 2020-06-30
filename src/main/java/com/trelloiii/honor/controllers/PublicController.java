@@ -73,5 +73,9 @@ public class PublicController {
             return ResponseEntity.of(Optional.empty());
         }
     }
+    @DeleteMapping("/post/{id}")
+    public void deletePost(@PathVariable Long id){
+        postService.deletePost(id);
+    }
 
 }

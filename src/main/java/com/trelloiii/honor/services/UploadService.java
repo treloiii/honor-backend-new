@@ -41,4 +41,11 @@ public class UploadService {
     public void removeOld(String path) throws IOException {
         FileUtils.cleanDirectory(new File(path));
     }
+    public void removeAll(String path){
+        try {
+            FileUtils.deleteDirectory(new File(path));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }
