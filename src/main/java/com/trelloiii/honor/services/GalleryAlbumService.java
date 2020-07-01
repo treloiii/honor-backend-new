@@ -10,6 +10,10 @@ import com.trelloiii.honor.repository.GalleryImageRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -38,34 +42,46 @@ public class GalleryAlbumService {
         this.galleryImageRepository = galleryImageRepository;
     }
 
+    @Cacheable("albums")
     public PageContentDto<GalleryAlbum> getAllAlbums(Integer page,Integer itemsPerPage) {
         Integer perPage= Optional.ofNullable(itemsPerPage).orElse(CONTENT_PER_PAGE);
         PageRequest pageRequest=PageRequest.of(page,perPage, Sort.by(Sort.Direction.DESC,"id"));
         Page<GalleryAlbum> albumPage =  galleryAlbumRepository.findAll(pageRequest);
-        return new PageContentDto<GalleryAlbum>(
+        return new PageContentDto<>(
                 albumPage.getContent(),
                 pageRequest.getPageNumber(),
                 albumPage.getTotalPages()
         );
     }
-
+    @Cacheable(value = "album",key = "#id")
     public GalleryAlbum findById(Long id) {
         return galleryAlbumRepository.findById(id).orElseThrow(() ->
                 new EntityNotFoundException(String.format("Entity Gallery album with id %d not found", id))
         );
     }
 
+    @CacheEvict(value = "albums",allEntries = true)
     public GalleryAlbum addAlbum(String name) {
         logger.info("Add album with name {}",name);
         GalleryAlbum album = new GalleryAlbum(name);
         return galleryAlbumRepository.save(album);
     }
 
+    @Caching(
+            evict = {@CacheEvict(value = "albums",allEntries = true)},
+            put = {@CachePut(value = "album",key = "#id")}
+    )
     public void updateAlbum(String name, Long id) {
         logger.info("Update album with id {} to name {}",id,name);
         galleryAlbumRepository.changeAlbumName(name, id);
     }
 
+    @Caching(
+            evict={
+                    @CacheEvict(value = "albums",allEntries = true),
+                    @CacheEvict(value = "album",key = "#id")
+            }
+    )
     public void deleteAlbum(Long id) {
         logger.info("Delete album with id {}",id);
         UrlHelper urlHelper = UrlHelper.getPaths(id, uploadPath, "gallery");

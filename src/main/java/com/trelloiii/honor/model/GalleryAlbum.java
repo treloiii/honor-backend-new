@@ -22,6 +22,7 @@ public class GalleryAlbum {
     private LocalDateTime time;
     @OneToMany(mappedBy = "album",cascade = CascadeType.ALL,orphanRemoval = true)
     @JsonView(Views.FullView.class)
+    //TODO pagination images
     private List<GalleryImage> images;
 
     public GalleryAlbum(String name) {

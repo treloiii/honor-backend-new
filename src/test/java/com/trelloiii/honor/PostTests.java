@@ -29,6 +29,7 @@ class PostTests {
     private PostService postService;
     @SneakyThrows
     @Test
+    @Transactional
     public void uploadUpdateDeletePostsTest(){
         String title="Test title";
         String description="Test description";
@@ -59,6 +60,7 @@ class PostTests {
 
 
     @SneakyThrows
+    @Transactional
     public void updatingPostTest(Long id){
         String title="new title";
         String description="new description";

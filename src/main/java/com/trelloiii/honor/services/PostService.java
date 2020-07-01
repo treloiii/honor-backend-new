@@ -2,6 +2,7 @@ package com.trelloiii.honor.services;
 
 import com.trelloiii.honor.dto.PageContentDto;
 import com.trelloiii.honor.dto.UrlHelper;
+import com.trelloiii.honor.exceptions.BadPostTypeException;
 import com.trelloiii.honor.exceptions.EntityNotFoundException;
 import com.trelloiii.honor.model.Comments;
 import com.trelloiii.honor.model.Post;
@@ -13,6 +14,10 @@ import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -22,6 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.transaction.Transactional;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -44,6 +50,8 @@ public class PostService {
     public Post getLastByType(String type){
         return postRepository.getDistinctFirstByType(PostType.valueOf(type));
     }
+
+    @Cacheable("posts")
     public PageContentDto<Post> findAllPosts(Integer page,Integer itemsPerPage) {
         Integer perPage=Optional.ofNullable(itemsPerPage).orElse(CONTENT_PER_PAGE);
         PageRequest pageRequest=PageRequest.of(page,perPage, Sort.by(Sort.Direction.DESC,"id"));
@@ -55,12 +63,14 @@ public class PostService {
         );
     }
 
-    public Post findById(Long id) {
+    @Cacheable(value = "post",key = "#id")
+    public Post findById(Long id) throws EntityNotFoundException {
         Post post= postRepository.findById(id).orElseThrow(() ->
                 new EntityNotFoundException(String.format("Post with id = %d not found", id))
         );
         post.setComments(
-                post.getComments()
+                Optional.ofNullable(post.getComments())
+                        .orElse(new ArrayList<>())
                         .stream()
                         .filter(Comments::isActive)
                         .collect(Collectors.toList())
@@ -68,6 +78,12 @@ public class PostService {
         return post;
     }
 
+    @Caching(
+            evict = {
+                    @CacheEvict(value = "posts",allEntries = true),
+                    @CacheEvict(value = "post",key = "#id")
+            }
+    )
     public void deletePost(Long id){
         logger.info("Delete post with id {}",id);
         UrlHelper helper = UrlHelper.getPaths(id,uploadPath,"posts");
@@ -75,6 +91,14 @@ public class PostService {
         postRepository.deleteById(id);
     }
 
+    @Caching(
+            evict = {
+                    @CacheEvict(value = "posts",allEntries = true)
+            },
+            put = {
+                    @CachePut(value = "post",key = "#id")
+            }
+    )
     public Post updatePost(String title,
                            String description,
                            String shortDescription,
@@ -82,7 +106,7 @@ public class PostService {
                            MultipartFile titleImageMini,
                            MultipartFile[] postImages,
                            String type,
-                           Long id) throws IOException {
+                           Long id) throws EntityNotFoundException {
         logger.info("Update post with id={}, description={}, shortDescription={}, type={}, images count={}",id,description,shortDescription,type,postImages.length);
         Post post = findById(id);
 
@@ -124,6 +148,7 @@ public class PostService {
         return postRepository.save(post);
     }
 
+    @CacheEvict(value = "posts",allEntries = true)
     public Post uploadPost(String title,
                            String description,
                            String shortDescription,
@@ -132,8 +157,12 @@ public class PostService {
                            MultipartFile[] postImages,
                            String type) throws IOException {
         logger.info("Upload post with description={}, shortDescription={}, type={}, images count={}",description,shortDescription,type,postImages.length);
-
-        PostType postType = PostType.valueOf(type);
+        PostType postType;
+        try {
+            postType = PostType.valueOf(type);
+        }catch (Exception e){
+            throw new BadPostTypeException(String.format("Type %s is incorrect",type));
+        }
 
         Post post = new Post();
         post.setShortDescription(shortDescription);
@@ -183,7 +212,7 @@ public class PostService {
 
 
 
-    public Comments addComment(Long id, String nickname, String text) {
+    public Comments addComment(Long id, String nickname, String text) throws EntityNotFoundException {
         Comments comments=new Comments();
         comments.setActive(false);
         comments.setNickname(nickname);
@@ -196,6 +225,7 @@ public class PostService {
     public void setActiveComments(boolean active,Long id){
         commentsRepository.setActive(active,id);
     }
+
     public void deleteComments(Long id){
         commentsRepository.deleteById(id);
     }

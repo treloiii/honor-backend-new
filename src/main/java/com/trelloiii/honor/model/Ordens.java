@@ -21,5 +21,6 @@ public class Ordens {
     private String titleImage;
     @OneToMany(mappedBy = "ordens")
     @JsonView(Views.FullView.class)
+    //TODO pagination veterans
     private List<Veterans> veterans;
 }

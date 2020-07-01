@@ -2,6 +2,8 @@ package com.trelloiii.honor.controllers;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import com.trelloiii.honor.dto.PageContentDto;
+import com.trelloiii.honor.exceptions.BadPostTypeException;
+import com.trelloiii.honor.exceptions.EntityNotFoundException;
 import com.trelloiii.honor.model.Comments;
 import com.trelloiii.honor.model.Post;
 import com.trelloiii.honor.services.PostService;
@@ -39,8 +41,12 @@ public class PostController {
     }
     @GetMapping("/{id}")
     @JsonView(Views.FullView.class)
-    public Post getPostById(@PathVariable Long id){
-        return postService.findById(id);
+    public ResponseEntity<Post> getPostById(@PathVariable Long id){
+        try {
+            return ResponseEntity.ok(postService.findById(id));
+        }catch (EntityNotFoundException e){
+            return ResponseEntity.notFound().build();
+        }
     }
     @PostMapping
     public ResponseEntity<?> uploadPost(
@@ -50,14 +56,13 @@ public class PostController {
             @RequestParam MultipartFile titleImage,
             @RequestParam("mini") MultipartFile titleImageMini,
             @RequestParam MultipartFile[] postImages,
-            @RequestParam String type,
-            HttpServletResponse response
+            @RequestParam String type
     ){
         try {
             return ResponseEntity.ok(postService.uploadPost(title, description, shortDescription, titleImage, titleImageMini, postImages, type));
-        } catch (IOException e) {
-            response.setStatus(400);
-            return ResponseEntity.of(Optional.empty());
+        } catch (IOException | BadPostTypeException e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
     @PutMapping("/{id}")
@@ -69,15 +74,13 @@ public class PostController {
             @RequestParam(value = "mini",required = false) MultipartFile titleImageMini,
             @RequestParam(required = false) MultipartFile[] postImages,
             @RequestParam(required = false) String type,
-            @PathVariable Long id,
-            HttpServletResponse response
+            @PathVariable Long id
     ){
         try{
             return ResponseEntity.ok(postService.updatePost(title,description,shortDescription,titleImage,titleImageMini,postImages,type,id));
-        }catch (IOException e){
+        }catch (EntityNotFoundException e){
             e.printStackTrace();
-            response.setStatus(400);
-            return ResponseEntity.of(Optional.empty());
+            return ResponseEntity.notFound().build();
         }
     }
     @DeleteMapping("/{id}")
@@ -86,10 +89,15 @@ public class PostController {
     }
 
     @PostMapping("/comments")
-    public Comments addCommentToPost(@RequestParam Long id,
+    public ResponseEntity<Comments> addCommentToPost(@RequestParam Long id,
                                      @RequestParam String nickname,
                                      @RequestParam String text){
-        return postService.addComment(id,nickname,text);
+        try {
+            return ResponseEntity.ok(postService.addComment(id, nickname, text));
+        }
+        catch(EntityNotFoundException e){
+            return ResponseEntity.notFound().build();
+        }
     }
     @PutMapping("/comments")
     public void changeActive(@RequestParam Boolean active,

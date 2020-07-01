@@ -34,5 +34,6 @@ public class Post {
     private PostType type;
     @OneToMany(mappedBy = "post")
     @JsonView(Views.FullView.class)
+    //TODO pagination of comments
     private List<Comments> comments;
 }
