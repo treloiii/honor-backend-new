@@ -1,5 +1,6 @@
 package com.trelloiii.honor.services;
 
+import com.trelloiii.honor.dto.PageContentDto;
 import com.trelloiii.honor.dto.UrlHelper;
 import com.trelloiii.honor.exceptions.EntityNotFoundException;
 import com.trelloiii.honor.model.GalleryAlbum;
@@ -9,6 +10,9 @@ import com.trelloiii.honor.repository.GalleryImageRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -16,10 +20,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class GalleryAlbumService {
     private final Logger logger = LoggerFactory.getLogger(GalleryAlbumService.class);
+    @Value("${content.page}")
+    private int CONTENT_PER_PAGE;
     @Value("${upload.path}")
     private String uploadPath;
     private final UploadService uploadService;
@@ -31,8 +38,15 @@ public class GalleryAlbumService {
         this.galleryImageRepository = galleryImageRepository;
     }
 
-    public List<GalleryAlbum> getAllAlbums() {
-        return galleryAlbumRepository.findAll();
+    public PageContentDto<GalleryAlbum> getAllAlbums(Integer page,Integer itemsPerPage) {
+        Integer perPage= Optional.ofNullable(itemsPerPage).orElse(CONTENT_PER_PAGE);
+        PageRequest pageRequest=PageRequest.of(page,perPage, Sort.by(Sort.Direction.DESC,"id"));
+        Page<GalleryAlbum> albumPage =  galleryAlbumRepository.findAll(pageRequest);
+        return new PageContentDto<GalleryAlbum>(
+                albumPage.getContent(),
+                pageRequest.getPageNumber(),
+                albumPage.getTotalPages()
+        );
     }
 
     public GalleryAlbum findById(Long id) {

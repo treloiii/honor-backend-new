@@ -1,5 +1,6 @@
 package com.trelloiii.honor.services;
 
+import com.trelloiii.honor.dto.PageContentDto;
 import com.trelloiii.honor.dto.UrlHelper;
 import com.trelloiii.honor.exceptions.EntityNotFoundException;
 import com.trelloiii.honor.model.Comments;
@@ -12,6 +13,9 @@ import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,6 +29,8 @@ import java.util.stream.Collectors;
 @Service
 public class PostService {
     Logger logger=LoggerFactory.getLogger(PostService.class);
+    @Value("${content.page}")
+    private int CONTENT_PER_PAGE;
     @Value("${upload.path}")
     private String uploadPath;
     private final PostRepository postRepository;
@@ -38,8 +44,15 @@ public class PostService {
     public Post getLastByType(String type){
         return postRepository.getDistinctFirstByType(PostType.valueOf(type));
     }
-    public List<Post> findAllPosts() {
-        return postRepository.findAll();
+    public PageContentDto<Post> findAllPosts(Integer page,Integer itemsPerPage) {
+        Integer perPage=Optional.ofNullable(itemsPerPage).orElse(CONTENT_PER_PAGE);
+        PageRequest pageRequest=PageRequest.of(page,perPage, Sort.by(Sort.Direction.DESC,"id"));
+        Page<Post> postPage=postRepository.findAll(pageRequest);
+        return new PageContentDto<>(
+                postPage.getContent(),
+                pageRequest.getPageNumber(),
+                postPage.getTotalPages()
+        );
     }
 
     public Post findById(Long id) {

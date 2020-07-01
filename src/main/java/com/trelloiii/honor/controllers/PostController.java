@@ -1,6 +1,7 @@
 package com.trelloiii.honor.controllers;
 
 import com.fasterxml.jackson.annotation.JsonView;
+import com.trelloiii.honor.dto.PageContentDto;
 import com.trelloiii.honor.model.Comments;
 import com.trelloiii.honor.model.Post;
 import com.trelloiii.honor.services.PostService;
@@ -25,14 +26,16 @@ public class PostController {
         this.postService = postService;
     }
 
-    @GetMapping
+    @GetMapping("/test")
     public String helloWorld(){
         return "Hello world";
     }
 
+    @GetMapping
     @JsonView(Views.ImportantView.class)
-    public List<Post> getPosts(){
-        return postService.findAllPosts();
+    public PageContentDto<Post> getPosts(@RequestParam Integer page,
+                                         @RequestParam(required = false) Integer itemsPerPage){
+        return postService.findAllPosts(page,itemsPerPage);
     }
     @GetMapping("/{id}")
     @JsonView(Views.FullView.class)

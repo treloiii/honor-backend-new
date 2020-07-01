@@ -1,6 +1,7 @@
 package com.trelloiii.honor.controllers;
 
 import com.fasterxml.jackson.annotation.JsonView;
+import com.trelloiii.honor.dto.PageContentDto;
 import com.trelloiii.honor.model.Ordens;
 import com.trelloiii.honor.model.Veterans;
 import com.trelloiii.honor.services.OrdenService;
@@ -23,8 +24,9 @@ public class OrdensController {
 
     @GetMapping
     @JsonView(Views.ImportantView.class)
-    public List<Ordens> getAllOrdens() {
-        return ordenService.getAllOrdens();
+    public PageContentDto<Ordens> getAllOrdens(@RequestParam Integer page,
+                                               @RequestParam(required = false) Integer itemsPerPage) {
+        return ordenService.getAllOrdens(page,itemsPerPage);
     }
 
     @GetMapping("/{id}")
