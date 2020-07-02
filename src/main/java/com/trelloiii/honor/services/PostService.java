@@ -52,10 +52,10 @@ public class PostService {
     }
 
     @Cacheable("posts")
-    public PageContentDto<Post> findAllPosts(Integer page,Integer itemsPerPage) {
+    public PageContentDto<Post> findAllPosts(Integer page, Integer itemsPerPage, String type) {
         Integer perPage=Optional.ofNullable(itemsPerPage).orElse(CONTENT_PER_PAGE);
         PageRequest pageRequest=PageRequest.of(page,perPage, Sort.by(Sort.Direction.DESC,"id"));
-        Page<Post> postPage=postRepository.findAll(pageRequest);
+        Page<Post> postPage=postRepository.findAllByType(pageRequest,PostType.valueOf(type));
         return new PageContentDto<>(
                 postPage.getContent(),
                 pageRequest.getPageNumber(),
@@ -122,7 +122,7 @@ public class PostService {
             try {
                 String path=helper.getPathToUpload()+"/title";
                 uploadService.removeOld(path);
-                uploadService.uploadImage(image, path, helper.getURL()+"/title");
+                post.setTitleImage(uploadService.uploadImage(image, path, helper.getURL()+"/title"));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -131,7 +131,7 @@ public class PostService {
             try {
                 String path=helper.getPathToUpload()+"/title_short";
                 uploadService.removeOld(path);
-                uploadService.uploadImage(image, path, helper.getURL()+"/title_short");
+                post.setTitleImageMini(uploadService.uploadImage(image, path, helper.getURL()+"/title_short"));
             } catch (IOException e) {
                 e.printStackTrace();
             }

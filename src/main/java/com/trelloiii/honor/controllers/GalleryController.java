@@ -6,6 +6,7 @@ import com.trelloiii.honor.model.GalleryAlbum;
 import com.trelloiii.honor.model.GalleryImage;
 import com.trelloiii.honor.services.GalleryAlbumService;
 import com.trelloiii.honor.view.Views;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -16,6 +17,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/gallery")
+@CrossOrigin
 public class GalleryController {
     private final GalleryAlbumService galleryAlbumService;
 

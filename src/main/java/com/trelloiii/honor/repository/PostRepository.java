@@ -9,5 +9,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface PostRepository extends JpaRepository<Post,Long> {
     Post getDistinctFirstByType(PostType type);
-    Page<Post> findAll(Pageable page);
+    Page<Post> findAllByType(Pageable page,PostType type);
 }

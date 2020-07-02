@@ -14,10 +14,14 @@ public class Ordens {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(length = 512)
     private String name;
     @JsonView(Views.FullView.class)
+    @Column(length = 1024)
     private String description;
+    @Column(length = 512)
     private String shortDescription;
+    @Column(length = 512)
     private String titleImage;
     @OneToMany(mappedBy = "ordens")
     @JsonView(Views.FullView.class)

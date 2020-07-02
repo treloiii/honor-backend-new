@@ -12,8 +12,8 @@ import org.springframework.security.oauth2.provider.token.TokenStore;
 @Configuration
 @EnableAuthorizationServer
 public class AuthServiceConfig extends AuthorizationServerConfigurerAdapter {
-    private static final String CLIENT_ID = "client";
-    private static final String CLIENT_SECRET = "$2y$12$HJkEtnzCwFwADVMrqRHEterX99TnyDL7iFrC8GQ3JIq5WlLMBPx0S";//demo-secret
+    private static final String CLIENT_ID = "honor-admin";
+    private static final String CLIENT_SECRET = "$2a$04$en5UZysFbuuK.fimkJ3MeetHmToFz8ZfjOQyzpc2Q03UHKFkkbukC";//demo-secret
     private static final String GRANT_TYPE_PASSWORD = "password";
     private static final String AUTHORIZATION_CODE = "authorization_code";
     private static final String REFRESH_TOKEN = "refresh_token";
@@ -21,8 +21,8 @@ public class AuthServiceConfig extends AuthorizationServerConfigurerAdapter {
     private static final String SCOPE_READ = "read";
     private static final String SCOPE_WRITE = "write";
     private static final String TRUST = "trust";
-    private static final int ACCESS_TOKEN_VALIDITY_SECONDS = 15;
-    private static final int FREFRESH_TOKEN_VALIDITY_SECONDS = 6*60*60;
+    private static final int ACCESS_TOKEN_VALIDITY_SECONDS = 60*60;
+    private static final int REFRESH_TOKEN_VALIDITY_SECONDS = 6*60*60;
 
     @Autowired
     private TokenStore tokenStore;
@@ -39,7 +39,7 @@ public class AuthServiceConfig extends AuthorizationServerConfigurerAdapter {
                 .authorizedGrantTypes(GRANT_TYPE_PASSWORD, AUTHORIZATION_CODE, REFRESH_TOKEN, IMPLICIT )
                 .scopes(SCOPE_READ, SCOPE_WRITE, TRUST)
                 .accessTokenValiditySeconds(ACCESS_TOKEN_VALIDITY_SECONDS).
-                refreshTokenValiditySeconds(FREFRESH_TOKEN_VALIDITY_SECONDS);
+                refreshTokenValiditySeconds(REFRESH_TOKEN_VALIDITY_SECONDS);
     }
 
     @Override

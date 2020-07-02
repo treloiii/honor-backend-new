@@ -10,6 +10,7 @@ import com.trelloiii.honor.repository.GalleryImageRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -22,8 +23,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -33,10 +34,12 @@ public class GalleryAlbumService {
     private int CONTENT_PER_PAGE;
     @Value("${upload.path}")
     private String uploadPath;
+    private final CacheManager cacheManager;
     private final UploadService uploadService;
     private final GalleryAlbumRepository galleryAlbumRepository;
     private final GalleryImageRepository galleryImageRepository;
-    public GalleryAlbumService(UploadService uploadService, GalleryAlbumRepository galleryAlbumRepository, GalleryImageRepository galleryImageRepository) {
+    public GalleryAlbumService(CacheManager cacheManager, UploadService uploadService, GalleryAlbumRepository galleryAlbumRepository, GalleryImageRepository galleryImageRepository) {
+        this.cacheManager = cacheManager;
         this.uploadService = uploadService;
         this.galleryAlbumRepository = galleryAlbumRepository;
         this.galleryImageRepository = galleryImageRepository;
@@ -68,8 +71,10 @@ public class GalleryAlbumService {
     }
 
     @Caching(
-            evict = {@CacheEvict(value = "albums",allEntries = true)},
-            put = {@CachePut(value = "album",key = "#id")}
+            evict = {
+                    @CacheEvict(value = "albums",allEntries = true),
+                    @CacheEvict(value = "album",key = "#id")
+            }
     )
     public void updateAlbum(String name, Long id) {
         logger.info("Update album with id {} to name {}",id,name);
@@ -89,6 +94,7 @@ public class GalleryAlbumService {
         galleryAlbumRepository.deleteById(id);
     }
 
+    @CacheEvict(value = "album",key = "#id")
     public GalleryImage addImage(Long id, String name, MultipartFile image) throws IOException {
         logger.info("Upload image with name {} to album with id {}",name,id);
         GalleryImage galleryImage = new GalleryImage();
@@ -99,6 +105,7 @@ public class GalleryAlbumService {
         return galleryImageRepository.save(galleryImage);
     }
 
+    @CacheEvict(value = "album",key = "#id")
     public List<GalleryImage> addAllImages(Long id, MultipartFile[] images) throws IOException {
         logger.info("Upload batch images with size {} to album with id {}",images.length,id);
         GalleryAlbum album=findById(id);
@@ -112,11 +119,13 @@ public class GalleryAlbumService {
         }
         return galleryImageRepository.saveAll(galleryImages);
     }
+
     private String uploadImage(Long id,MultipartFile image) throws IOException {
         uploadService.createGalleryFolders(uploadPath, id);
         UrlHelper urlHelper = UrlHelper.getPaths(id, uploadPath, "gallery");
         return uploadService.uploadImage(image, urlHelper.getPathToUpload(), urlHelper.getURL());
     }
+
     public void deleteImage(Long id){
         logger.info("Delete image with id {}",id);
         GalleryImage image=galleryImageRepository.findById(id).orElseThrow(()->
@@ -131,6 +140,7 @@ public class GalleryAlbumService {
         catch (Exception e){
             e.printStackTrace();
         }
+        Objects.requireNonNull(cacheManager.getCache("album")).evictIfPresent(image.getAlbum().getId());
         galleryImageRepository.deleteById(id);
     }
 }

@@ -19,16 +19,22 @@ public class Post {
     @JsonView(Views.ImportantView.class)
     private Long id;
     @JsonView(Views.ImportantView.class)
+    @Column(length = 512)
     private String title;
     @JsonView(Views.FullView.class)
+    @Column(columnDefinition = "LONGTEXT")
+    @Lob
     private String description;
     @JsonView(Views.FullView.class)
+    @Column(length = 512)
     private String titleImage;
     @JsonView(Views.ImportantView.class)
     private LocalDateTime time;
     @JsonView(Views.ImportantView.class)
+    @Column(length = 512)
     private String titleImageMini;
     @JsonView(Views.ImportantView.class)
+    @Column(length = 512)
     private String shortDescription;
     @JsonIgnore
     private PostType type;

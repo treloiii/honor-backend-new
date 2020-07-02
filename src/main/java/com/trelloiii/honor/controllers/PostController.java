@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
@@ -21,6 +22,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/post")
+@CrossOrigin
 public class PostController {
     private final PostService postService;
 
@@ -36,8 +38,9 @@ public class PostController {
     @GetMapping
     @JsonView(Views.ImportantView.class)
     public PageContentDto<Post> getPosts(@RequestParam Integer page,
-                                         @RequestParam(required = false) Integer itemsPerPage){
-        return postService.findAllPosts(page,itemsPerPage);
+                                         @RequestParam(required = false) Integer itemsPerPage,
+                                         @RequestParam String type){
+        return postService.findAllPosts(page,itemsPerPage,type);
     }
     @GetMapping("/{id}")
     @JsonView(Views.FullView.class)
@@ -66,7 +69,7 @@ public class PostController {
         }
     }
     @PutMapping("/{id}")
-    public ResponseEntity<?> updatePost(
+    public ResponseEntity<?> updatePost( //TODO сделать изменение времени
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String description,
             @RequestParam(value = "short",required = false) String shortDescription,
