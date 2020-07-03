@@ -6,11 +6,15 @@ import com.trelloiii.honor.exceptions.BadPostTypeException;
 import com.trelloiii.honor.exceptions.EntityNotFoundException;
 import com.trelloiii.honor.model.Comments;
 import com.trelloiii.honor.model.Post;
+import com.trelloiii.honor.model.User;
 import com.trelloiii.honor.services.PostService;
 import com.trelloiii.honor.view.Views;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -44,14 +48,16 @@ public class PostController {
     }
     @GetMapping("/{id}")
     @JsonView(Views.FullView.class)
-    public ResponseEntity<Post> getPostById(@PathVariable Long id){
+    public ResponseEntity<Post> getPostById(@PathVariable Long id, @AuthenticationPrincipal User user){
         try {
-            return ResponseEntity.ok(postService.findById(id));
+            boolean sendRawComments = Optional.ofNullable(user).isPresent(); // if request from admin, we need to send all comments includes inactive
+            return ResponseEntity.ok(sendRawComments?postService.findByIdRawComments(id):postService.findById(id));
         }catch (EntityNotFoundException e){
             return ResponseEntity.notFound().build();
         }
     }
     @PostMapping
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> uploadPost(
             @RequestParam String title,
             @RequestParam String description,
@@ -69,6 +75,7 @@ public class PostController {
         }
     }
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> updatePost( //TODO сделать изменение времени
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String description,
@@ -87,6 +94,7 @@ public class PostController {
         }
     }
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void deletePost(@PathVariable Long id){
         postService.deletePost(id);
     }
@@ -103,13 +111,16 @@ public class PostController {
         }
     }
     @PutMapping("/comments")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void changeActive(@RequestParam Boolean active,
-                                 @RequestParam Long id){
-        postService.setActiveComments(active,id);
+                             @RequestParam Long id,
+                             @RequestParam Long postId){
+        postService.setActiveComments(active,id,postId);
     }
     @DeleteMapping("/comments/{id}")
-    public void deleteComment(@PathVariable Long id){
-        postService.deleteComments(id);
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public void deleteComment(@PathVariable Long id,@RequestParam Long postId){
+        postService.deleteComments(id,postId);
     }
 
 }

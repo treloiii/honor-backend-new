@@ -7,6 +7,7 @@ import com.trelloiii.honor.model.Veterans;
 import com.trelloiii.honor.services.OrdenService;
 import com.trelloiii.honor.view.Views;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -37,6 +38,7 @@ public class OrdensController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> addOrden(
             @RequestParam String name,
             @RequestParam String description,
@@ -52,6 +54,7 @@ public class OrdensController {
     }
 
     @PutMapping("{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public Ordens updateOrden(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String description,
@@ -63,11 +66,13 @@ public class OrdensController {
     }
 
     @DeleteMapping("{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void deleteOrden(@PathVariable Long id) {
         ordenService.deleteOrden(id);
     }
 
     @PostMapping("/veterans")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public Veterans addVeteran(@RequestParam Long id,
                                @RequestParam String fio,
                                @RequestParam String post,

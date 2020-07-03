@@ -103,7 +103,7 @@ class PostTests {
         testDeleteComment(comments.getId());
     }
     public void testDeleteComment(Long id){
-        postService.deleteComments(id);
+        postService.deleteComments(id,0L);
         Assert.assertThrows(EntityNotFoundException.class,()->postService.findCommentById(id));
     }
 }

@@ -8,6 +8,7 @@ import com.trelloiii.honor.services.GalleryAlbumService;
 import com.trelloiii.honor.view.Views;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -37,18 +38,22 @@ public class GalleryController {
         return galleryAlbumService.findById(id);
     }
     @PostMapping
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public GalleryAlbum addAlbum(@RequestParam String name){
         return galleryAlbumService.addAlbum(name);
     }
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void updateAlbum(@RequestParam String name, @PathVariable Long id){
         galleryAlbumService.updateAlbum(name,id);
     }
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void deleteAlbum(@PathVariable Long id){
         galleryAlbumService.deleteAlbum(id);
     }
     @PostMapping("/image")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> addImage(
             @RequestParam String name,
             @RequestParam MultipartFile image,
@@ -61,6 +66,7 @@ public class GalleryController {
         }
     }
     @PostMapping("/images")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> addImages(
             @RequestParam Long id,
             @RequestParam MultipartFile[] images
@@ -73,6 +79,7 @@ public class GalleryController {
         }
     }
     @DeleteMapping("/image/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void deleteImage(@PathVariable Long id){
         galleryAlbumService.deleteImage(id);
     }

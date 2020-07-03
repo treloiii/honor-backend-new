@@ -9,8 +9,6 @@ import com.trelloiii.honor.model.Post;
 import com.trelloiii.honor.model.PostType;
 import com.trelloiii.honor.repository.CommentsRepository;
 import com.trelloiii.honor.repository.PostRepository;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,17 +22,15 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.transaction.Transactional;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class PostService {
-    Logger logger=LoggerFactory.getLogger(PostService.class);
+    Logger logger = LoggerFactory.getLogger(PostService.class);
     @Value("${content.page}")
     private int CONTENT_PER_PAGE;
     @Value("${upload.path}")
@@ -42,20 +38,22 @@ public class PostService {
     private final PostRepository postRepository;
     private final UploadService uploadService;
     private final CommentsRepository commentsRepository;
+
     public PostService(PostRepository postRepository, UploadService uploadService, CommentsRepository commentsRepository) {
         this.postRepository = postRepository;
         this.uploadService = uploadService;
         this.commentsRepository = commentsRepository;
     }
-    public Post getLastByType(String type){
+
+    public Post getLastByType(String type) {
         return postRepository.getDistinctFirstByType(PostType.valueOf(type));
     }
 
     @Cacheable("posts")
     public PageContentDto<Post> findAllPosts(Integer page, Integer itemsPerPage, String type) {
-        Integer perPage=Optional.ofNullable(itemsPerPage).orElse(CONTENT_PER_PAGE);
-        PageRequest pageRequest=PageRequest.of(page,perPage, Sort.by(Sort.Direction.DESC,"id"));
-        Page<Post> postPage=postRepository.findAllByType(pageRequest,PostType.valueOf(type));
+        Integer perPage = Optional.ofNullable(itemsPerPage).orElse(CONTENT_PER_PAGE);
+        PageRequest pageRequest = PageRequest.of(page, perPage, Sort.by(Sort.Direction.DESC, "id"));
+        Page<Post> postPage = postRepository.findAllByType(pageRequest, PostType.valueOf(type));
         return new PageContentDto<>(
                 postPage.getContent(),
                 pageRequest.getPageNumber(),
@@ -63,9 +61,9 @@ public class PostService {
         );
     }
 
-    @Cacheable(value = "post",key = "#id")
+    @Cacheable(value = "post", key = "#id")
     public Post findById(Long id) throws EntityNotFoundException {
-        Post post= postRepository.findById(id).orElseThrow(() ->
+        Post post = postRepository.findById(id).orElseThrow(() ->
                 new EntityNotFoundException(String.format("Post with id = %d not found", id))
         );
         post.setComments(
@@ -78,25 +76,35 @@ public class PostService {
         return post;
     }
 
+    @Cacheable(value = "postRaw", key = "#id")
+    public Post findByIdRawComments(Long id) throws EntityNotFoundException {
+        return postRepository.findById(id).orElseThrow(() ->
+                new EntityNotFoundException(String.format("Post with id = %d not found", id))
+        );
+    }
+
+
     @Caching(
             evict = {
-                    @CacheEvict(value = "posts",allEntries = true),
-                    @CacheEvict(value = "post",key = "#id")
+                    @CacheEvict(value = "posts", allEntries = true),
+                    @CacheEvict(value = "post", key = "#id"),
+                    @CacheEvict(value = "postRaw", key = "#id")
             }
     )
-    public void deletePost(Long id){
-        logger.info("Delete post with id {}",id);
-        UrlHelper helper = UrlHelper.getPaths(id,uploadPath,"posts");
+    public void deletePost(Long id) {
+        logger.info("Delete post with id {}", id);
+        UrlHelper helper = UrlHelper.getPaths(id, uploadPath, "posts");
         uploadService.removeAll(helper.getPathToUpload());
         postRepository.deleteById(id);
     }
 
     @Caching(
             evict = {
-                    @CacheEvict(value = "posts",allEntries = true)
+                    @CacheEvict(value = "posts", allEntries = true)
             },
             put = {
-                    @CachePut(value = "post",key = "#id")
+                    @CachePut(value = "post", key = "#id"),
+                    @CachePut(value = "postRaw", key = "#id")
             }
     )
     public Post updatePost(String title,
@@ -107,40 +115,39 @@ public class PostService {
                            MultipartFile[] postImages,
                            String type,
                            Long id) throws EntityNotFoundException {
-        logger.info("Update post with id={}, description={}, shortDescription={}, type={}, images count={}",id,description,shortDescription,type,postImages.length);
+        logger.info("Update post with id={}, description={}, shortDescription={}, type={}, images count={}", id, description, shortDescription, type, postImages.length);
         Post post = findById(id);
 
-        UrlHelper helper = UrlHelper.getPaths(post.getId(),uploadPath,"posts");
+        UrlHelper helper = UrlHelper.getPaths(post.getId(), uploadPath, "posts");
 
         Optional.ofNullable(title).ifPresent(post::setTitle);
         Optional.ofNullable(shortDescription).ifPresent(post::setShortDescription);
         Optional.ofNullable(type).ifPresent(t -> post.setType(PostType.valueOf(t)));
 
 
-
         Optional.ofNullable(titleImage).ifPresent(image -> {
             try {
-                String path=helper.getPathToUpload()+"/title";
+                String path = helper.getPathToUpload() + "/title";
                 uploadService.removeOld(path);
-                post.setTitleImage(uploadService.uploadImage(image, path, helper.getURL()+"/title"));
+                post.setTitleImage(uploadService.uploadImage(image, path, helper.getURL() + "/title"));
             } catch (IOException e) {
                 e.printStackTrace();
             }
         });
         Optional.ofNullable(titleImageMini).ifPresent(image -> {
             try {
-                String path=helper.getPathToUpload()+"/title_short";
+                String path = helper.getPathToUpload() + "/title_short";
                 uploadService.removeOld(path);
-                post.setTitleImageMini(uploadService.uploadImage(image, path, helper.getURL()+"/title_short"));
+                post.setTitleImageMini(uploadService.uploadImage(image, path, helper.getURL() + "/title_short"));
             } catch (IOException e) {
                 e.printStackTrace();
             }
         });
         Optional.ofNullable(description).ifPresent(d -> {
-            String path=helper.getPathToUpload()+"/description";
+            String path = helper.getPathToUpload() + "/description";
             try {
                 uploadService.removeOld(path);
-                post.setDescription(processDescription(d, postImages, path, helper.getURL()+"/description"));
+                post.setDescription(processDescription(d, postImages, path, helper.getURL() + "/description"));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -148,7 +155,7 @@ public class PostService {
         return postRepository.save(post);
     }
 
-    @CacheEvict(value = "posts",allEntries = true)
+    @CacheEvict(value = "posts", allEntries = true)
     public Post uploadPost(String title,
                            String description,
                            String shortDescription,
@@ -156,12 +163,12 @@ public class PostService {
                            MultipartFile titleImageMini,
                            MultipartFile[] postImages,
                            String type) throws IOException {
-        logger.info("Upload post with description={}, shortDescription={}, type={}, images count={}",description,shortDescription,type,postImages.length);
+        logger.info("Upload post with description={}, shortDescription={}, type={}, images count={}", description, shortDescription, type, postImages.length);
         PostType postType;
         try {
             postType = PostType.valueOf(type);
-        }catch (Exception e){
-            throw new BadPostTypeException(String.format("Type %s is incorrect",type));
+        } catch (Exception e) {
+            throw new BadPostTypeException(String.format("Type %s is incorrect", type));
         }
 
         Post post = new Post();
@@ -173,14 +180,14 @@ public class PostService {
 
         uploadService.createPostFolders(uploadPath, post.getId());
 
-        UrlHelper helper = UrlHelper.getPaths(post.getId(),uploadPath,"posts");
+        UrlHelper helper = UrlHelper.getPaths(post.getId(), uploadPath, "posts");
         String pathToUpload = helper.getPathToUpload();
         String URL = helper.getURL();
 
-        post.setTitleImage(uploadService.uploadImage(titleImage, pathToUpload+"/title", URL+"/title"));
-        post.setTitleImageMini(uploadService.uploadImage(titleImageMini, pathToUpload+"/title_short", URL+"/title_short"));
+        post.setTitleImage(uploadService.uploadImage(titleImage, pathToUpload + "/title", URL + "/title"));
+        post.setTitleImageMini(uploadService.uploadImage(titleImageMini, pathToUpload + "/title_short", URL + "/title_short"));
 
-        post.setDescription(processDescription(description, postImages, pathToUpload+"/description", URL+"/description"));
+        post.setDescription(processDescription(description, postImages, pathToUpload + "/description", URL + "/description"));
         return postRepository.save(post);
     }
 
@@ -200,7 +207,7 @@ public class PostService {
                             .append("<img src=\"")
                             .append(imagePath)
                             .append("\">");
-                }else{
+                } else {
                     textBuilder.append(s);
                 }
                 i++;
@@ -210,10 +217,14 @@ public class PostService {
         return description;
     }
 
-
-
+    @Caching(
+            evict = {
+                    @CacheEvict(value = "post", key = "#id"),
+                    @CacheEvict(value = "postRaw", key = "#id")
+            }
+    )
     public Comments addComment(Long id, String nickname, String text) throws EntityNotFoundException {
-        Comments comments=new Comments();
+        Comments comments = new Comments();
         comments.setActive(false);
         comments.setNickname(nickname);
         comments.setText(text);
@@ -222,16 +233,29 @@ public class PostService {
         return commentsRepository.save(comments);
     }
 
-    public void setActiveComments(boolean active,Long id){
-        commentsRepository.setActive(active,id);
+    @Caching(
+            evict = {
+                    @CacheEvict(value = "post", key = "#postId"),
+                    @CacheEvict(value = "postRaw", key = "#postId")
+            }
+    )
+    public void setActiveComments(boolean active, Long id, Long postId) {
+        commentsRepository.setActive(active, id);
     }
 
-    public void deleteComments(Long id){
+    @Caching(
+            evict = {
+                    @CacheEvict(value = "post", key = "#postId"),
+                    @CacheEvict(value = "postRaw", key = "#postId")
+            }
+    )
+    public void deleteComments(Long id, Long postId) {
         commentsRepository.deleteById(id);
     }
-    public Comments findCommentById(Long id){
-        return commentsRepository.findById(id).orElseThrow(()->
-            new EntityNotFoundException(String.format("Entity comments with id = %d not found",id))
+
+    public Comments findCommentById(Long id) {
+        return commentsRepository.findById(id).orElseThrow(() ->
+                new EntityNotFoundException(String.format("Entity comments with id = %d not found", id))
         );
     }
 }
