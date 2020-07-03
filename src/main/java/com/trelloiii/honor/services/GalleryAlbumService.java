@@ -1,5 +1,6 @@
 package com.trelloiii.honor.services;
 
+import com.trelloiii.honor.dto.GalleryAlbumTitled;
 import com.trelloiii.honor.dto.PageContentDto;
 import com.trelloiii.honor.dto.UrlHelper;
 import com.trelloiii.honor.exceptions.EntityNotFoundException;
@@ -22,10 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class GalleryAlbumService {
@@ -46,12 +44,24 @@ public class GalleryAlbumService {
     }
 
     @Cacheable("albums")
-    public PageContentDto<GalleryAlbum> getAllAlbums(Integer page,Integer itemsPerPage) {
+    public PageContentDto<GalleryAlbumTitled> getAllAlbums(Integer page,Integer itemsPerPage) {
         Integer perPage= Optional.ofNullable(itemsPerPage).orElse(CONTENT_PER_PAGE);
         PageRequest pageRequest=PageRequest.of(page,perPage, Sort.by(Sort.Direction.DESC,"id"));
         Page<GalleryAlbum> albumPage =  galleryAlbumRepository.findAll(pageRequest);
+        List<GalleryAlbumTitled> titledList = new ArrayList<>();
+        albumPage.forEach(ga->{
+            Collections.reverse(ga.getImages());
+            GalleryAlbumTitled albumTitled = new GalleryAlbumTitled(
+                            ga.getImages().stream()
+                            .findFirst()
+                            .get() //its every time not null
+                            .getUrl(),
+                    ga
+            );
+            titledList.add(albumTitled);
+        });
         return new PageContentDto<>(
-                albumPage.getContent(),
+                titledList,
                 pageRequest.getPageNumber(),
                 albumPage.getTotalPages()
         );
@@ -73,7 +83,8 @@ public class GalleryAlbumService {
     @Caching(
             evict = {
                     @CacheEvict(value = "albums",allEntries = true),
-                    @CacheEvict(value = "album",key = "#id")
+                    @CacheEvict(value = "album",key = "#id"),
+                    @CacheEvict(value = "grid", allEntries = true)
             }
     )
     public void updateAlbum(String name, Long id) {
@@ -84,7 +95,8 @@ public class GalleryAlbumService {
     @Caching(
             evict={
                     @CacheEvict(value = "albums",allEntries = true),
-                    @CacheEvict(value = "album",key = "#id")
+                    @CacheEvict(value = "album",key = "#id"),
+                    @CacheEvict(value = "grid", allEntries = true)
             }
     )
     public void deleteAlbum(Long id) {
@@ -94,7 +106,12 @@ public class GalleryAlbumService {
         galleryAlbumRepository.deleteById(id);
     }
 
-    @CacheEvict(value = "album",key = "#id")
+    @Caching(
+            evict = {
+                    @CacheEvict(value = "album",key = "#id"),
+                    @CacheEvict(value = "grid", allEntries = true)
+            }
+    )
     public GalleryImage addImage(Long id, String name, MultipartFile image) throws IOException {
         logger.info("Upload image with name {} to album with id {}",name,id);
         GalleryImage galleryImage = new GalleryImage();
@@ -105,7 +122,12 @@ public class GalleryAlbumService {
         return galleryImageRepository.save(galleryImage);
     }
 
-    @CacheEvict(value = "album",key = "#id")
+    @Caching(
+            evict = {
+                    @CacheEvict(value = "album",key = "#id"),
+                    @CacheEvict(value = "grid", allEntries = true)
+            }
+    )
     public List<GalleryImage> addAllImages(Long id, MultipartFile[] images) throws IOException {
         logger.info("Upload batch images with size {} to album with id {}",images.length,id);
         GalleryAlbum album=findById(id);
@@ -126,6 +148,7 @@ public class GalleryAlbumService {
         return uploadService.uploadImage(image, urlHelper.getPathToUpload(), urlHelper.getURL());
     }
 
+    @CacheEvict(value = "grid", allEntries = true)
     public void deleteImage(Long id){
         logger.info("Delete image with id {}",id);
         GalleryImage image=galleryImageRepository.findById(id).orElseThrow(()->
@@ -142,5 +165,8 @@ public class GalleryAlbumService {
         }
         Objects.requireNonNull(cacheManager.getCache("album")).evictIfPresent(image.getAlbum().getId());
         galleryImageRepository.deleteById(id);
+    }
+    public GalleryImage getLastImageFromAll(){
+        return galleryImageRepository.findFirst1ByOrderByIdDesc();
     }
 }

@@ -1,10 +1,12 @@
 package com.trelloiii.honor.services;
 
+import com.trelloiii.honor.dto.Grid;
 import com.trelloiii.honor.dto.PageContentDto;
 import com.trelloiii.honor.dto.UrlHelper;
 import com.trelloiii.honor.exceptions.BadPostTypeException;
 import com.trelloiii.honor.exceptions.EntityNotFoundException;
 import com.trelloiii.honor.model.Comments;
+import com.trelloiii.honor.model.GalleryImage;
 import com.trelloiii.honor.model.Post;
 import com.trelloiii.honor.model.PostType;
 import com.trelloiii.honor.repository.CommentsRepository;
@@ -25,8 +27,11 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static com.trelloiii.honor.model.PostType.*;
 
 @Service
 public class PostService {
@@ -38,15 +43,16 @@ public class PostService {
     private final PostRepository postRepository;
     private final UploadService uploadService;
     private final CommentsRepository commentsRepository;
-
-    public PostService(PostRepository postRepository, UploadService uploadService, CommentsRepository commentsRepository) {
+    private final GalleryAlbumService albumService;
+    public PostService(PostRepository postRepository, UploadService uploadService, CommentsRepository commentsRepository, GalleryAlbumService albumService) {
         this.postRepository = postRepository;
         this.uploadService = uploadService;
         this.commentsRepository = commentsRepository;
+        this.albumService = albumService;
     }
 
     public Post getLastByType(String type) {
-        return postRepository.getDistinctFirstByType(PostType.valueOf(type));
+        return postRepository.findFirst1ByTypeOrderByIdDesc(PostType.valueOf(type));
     }
 
     @Cacheable("posts")
@@ -87,6 +93,7 @@ public class PostService {
     @Caching(
             evict = {
                     @CacheEvict(value = "posts", allEntries = true),
+                    @CacheEvict(value = "grid", allEntries = true),
                     @CacheEvict(value = "post", key = "#id"),
                     @CacheEvict(value = "postRaw", key = "#id")
             }
@@ -100,7 +107,8 @@ public class PostService {
 
     @Caching(
             evict = {
-                    @CacheEvict(value = "posts", allEntries = true)
+                    @CacheEvict(value = "posts", allEntries = true),
+                    @CacheEvict(value = "grid", allEntries = true)
             },
             put = {
                     @CachePut(value = "post", key = "#id"),
@@ -155,7 +163,13 @@ public class PostService {
         return postRepository.save(post);
     }
 
-    @CacheEvict(value = "posts", allEntries = true)
+
+    @Caching(
+            evict = {
+                    @CacheEvict(value = "posts", allEntries = true),
+                    @CacheEvict(value = "grid",allEntries = true)
+            }
+    )
     public Post uploadPost(String title,
                            String description,
                            String shortDescription,
@@ -257,5 +271,44 @@ public class PostService {
         return commentsRepository.findById(id).orElseThrow(() ->
                 new EntityNotFoundException(String.format("Entity comments with id = %d not found", id))
         );
+    }
+
+    @Cacheable("grid")
+    public List<Grid> getGrid() {
+        List<Grid> gridList = new ArrayList<>();
+        PostType[] types = new PostType[]{RALLY,NEWS,MEMO,EVENTS};
+        for (PostType type : types) {
+            Post post = postRepository.findFirst1ByTypeOrderByIdDesc(type);
+            Grid postToGrid = new Grid(
+                    post.getTitleImageMini(),
+                    post.getTitle(),
+                    mapType(post.getType()),
+                    extractUrl(post.getType()),
+                    post.getId()
+            );
+            gridList.add(postToGrid);
+        }
+        GalleryImage image = albumService.getLastImageFromAll();
+        gridList.add(new Grid(
+                image.getUrl(),
+                image.getAlbum().getName(),
+                "Галерея",
+                "/gallery",
+                image.getAlbum().getId()
+        ));
+        return gridList;
+    }
+    private String extractUrl(PostType postType){
+        String type = postType.toString();
+        return type.equalsIgnoreCase("memo")?"/memories":"/"+type.toLowerCase();
+    }
+    private String mapType(PostType postType){
+        switch (postType){
+            case EVENTS:return "Мероприятия";
+            case RALLY:return "Автопробеги";
+            case NEWS:return "Новости";
+            case MEMO:return "Воспоминания";
+        }
+        throw new RuntimeException("wrong post type");
     }
 }

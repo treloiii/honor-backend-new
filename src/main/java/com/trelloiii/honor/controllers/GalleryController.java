@@ -1,6 +1,7 @@
 package com.trelloiii.honor.controllers;
 
 import com.fasterxml.jackson.annotation.JsonView;
+import com.trelloiii.honor.dto.GalleryAlbumTitled;
 import com.trelloiii.honor.dto.PageContentDto;
 import com.trelloiii.honor.model.GalleryAlbum;
 import com.trelloiii.honor.model.GalleryImage;
@@ -28,8 +29,8 @@ public class GalleryController {
 
     @GetMapping
     @JsonView(Views.ImportantView.class)
-    public PageContentDto<GalleryAlbum> getAllAlbums(@RequestParam Integer page,
-                                                     @RequestParam(required = false) Integer itemsPerPage){
+    public PageContentDto<GalleryAlbumTitled> getAllAlbums(@RequestParam Integer page,
+                                                           @RequestParam(required = false) Integer itemsPerPage){
         return galleryAlbumService.getAllAlbums(page,itemsPerPage);
     }
     @GetMapping("/{id}")

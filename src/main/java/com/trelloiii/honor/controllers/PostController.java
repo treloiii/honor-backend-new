@@ -1,6 +1,7 @@
 package com.trelloiii.honor.controllers;
 
 import com.fasterxml.jackson.annotation.JsonView;
+import com.trelloiii.honor.dto.Grid;
 import com.trelloiii.honor.dto.PageContentDto;
 import com.trelloiii.honor.exceptions.BadPostTypeException;
 import com.trelloiii.honor.exceptions.EntityNotFoundException;
@@ -121,6 +122,11 @@ public class PostController {
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void deleteComment(@PathVariable Long id,@RequestParam Long postId){
         postService.deleteComments(id,postId);
+    }
+
+    @GetMapping("/grid")
+    public List<Grid> getGrid(){
+        return postService.getGrid();
     }
 
 }
