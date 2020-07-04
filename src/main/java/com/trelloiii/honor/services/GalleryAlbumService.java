@@ -54,7 +54,7 @@ public class GalleryAlbumService {
             GalleryAlbumTitled albumTitled = new GalleryAlbumTitled(
                             ga.getImages().stream()
                             .findFirst()
-                            .get() //its every time not null
+                            .orElse(new GalleryImage(1L,"not found","https://bobcatlipetsk.ru/wp-content/plugins/premmerce-woocommerce-brands/assets/frontend/img/placeholder.png",null))
                             .getUrl(),
                     ga
             );

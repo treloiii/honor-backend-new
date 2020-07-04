@@ -6,6 +6,7 @@ import com.trelloiii.honor.model.Post;
 import com.trelloiii.honor.model.PostType;
 import com.trelloiii.honor.services.PostService;
 import lombok.SneakyThrows;
+import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.function.ThrowingRunnable;
 import org.junit.jupiter.api.Test;
@@ -15,7 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.multipart.MultipartFile;
-import sun.misc.IOUtils;
+
 
 import javax.transaction.Transactional;
 import java.io.File;
@@ -39,9 +40,7 @@ class PostTests {
         MultipartFile titleImage=new MockMultipartFile("title_image",
                 mockImage.getName(),
                 "image/png",
-                IOUtils.readAllBytes(
-                    new FileInputStream(mockImage)
-                )
+                IOUtils.toByteArray(new FileInputStream(mockImage))
         );
         Post post=postService.uploadPost(title,description,shortDescription,titleImage,titleImage,new MultipartFile[]{titleImage},type.toString());
         Assert.assertNotNull(post.getTitleImage());
@@ -64,7 +63,7 @@ class PostTests {
     public void updatingPostTest(Long id){
         String title="new title";
         String description="new description";
-        String type="MEMORIES";
+        String type="MEMO";
         String shortDescription="new short";
         Post post=postService.updatePost(
                 title,

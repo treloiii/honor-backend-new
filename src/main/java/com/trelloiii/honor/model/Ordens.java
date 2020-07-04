@@ -17,7 +17,8 @@ public class Ordens {
     @Column(length = 512)
     private String name;
     @JsonView(Views.FullView.class)
-    @Column(length = 1024)
+    @Column(columnDefinition = "TEXT")
+    @Lob
     private String description;
     @Column(length = 512)
     private String shortDescription;

@@ -72,7 +72,7 @@ public class OrdensController {
     }
 
     @PostMapping("/veterans")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+//    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public Veterans addVeteran(@RequestParam Long id,
                                @RequestParam String fio,
                                @RequestParam String post,

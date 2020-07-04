@@ -7,6 +7,7 @@ import lombok.SneakyThrows;
 
 import static org.junit.Assert.*;
 
+import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
@@ -15,7 +16,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.multipart.MultipartFile;
-import sun.misc.IOUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -37,9 +37,7 @@ class OrdenTests {
         MultipartFile titleImage = new MockMultipartFile("title_image",
                 mockImage.getName(),
                 "image/png",
-                IOUtils.readAllBytes(
-                        new FileInputStream(mockImage)
-                )
+                IOUtils.toByteArray(new FileInputStream(mockImage))
         );
         Ordens orden = ordenService.addOrden(name, description, shortDescription, titleImage);
         assertEquals(name, orden.getName());

@@ -18,6 +18,7 @@ public class Veterans {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String fio;
+    @Column(length = 1024)
     private String post;
     @Column(name = "rankk")
     private String rank;
