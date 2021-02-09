@@ -56,7 +56,7 @@ public class UploadService {
         String uploadImageName = pathToUpload + "/" + fileUUID + "_" + imageName;
         File resultedImage = new File(uploadImageName);
         image.transferTo(resultedImage);
-        compressImage(resultedImage);
+//        compressImage(resultedImage);
         return String.join("/",hostname,"img",resultImageName);
     }
     public void removeOld(String path) throws IOException {
